@@ -19,14 +19,18 @@ const users = require("./json/users.json");
  */
 const getUserWithEmail = function (email) {
   return pool
-    .query(`SELECT email,password FROM users WHERE email = $1`, [email])
+    .query(`SELECT name, email,password,id FROM users WHERE email = $1;`, [
+      email,
+    ])
     .then((result) => {
       // console.log(result);
       // console.log(result.rows[0].email);
       // console.log(result.rows[0].password);
       const user = {};
+      user["name"] = result.rows[0].name;
       user["email"] = result.rows[0].email;
       user["password"] = result.rows[0].password;
+      user["id"] = result.rows[0].id;
       // console.log(user);
       return user;
     })
@@ -43,9 +47,12 @@ exports.getUserWithEmail = getUserWithEmail;
  */
 const getUserWithId = function (id) {
   return pool
-    .query(`SELECT id FROM users WHERE id = $1`, [id])
+    .query(`SELECT id, name, email, password FROM users WHERE id = $1;`, [id])
     .then((result) => {
+      // console.log(result);
       const user = {};
+      user["name"] = result.rows[0].name;
+      user["email"] = result.rows[0].email;
       user["id"] = result.rows[0].id;
       return user;
     })
@@ -83,7 +90,25 @@ exports.addUser = addUser;
  * @return {Promise<[{}]>} A promise to the reservations.
  */
 const getAllReservations = function (guest_id, limit = 10) {
-  return getAllProperties(null, 2);
+  return pool
+    .query(
+      `
+    SELECT start_date,end_date,property_id
+    FROM reservations
+    JOIN users ON users.id = guest_id
+    WHERE users.id = $1
+    GROUP BY users.id,reservations.id
+    LIMIT $2;
+    `,
+      [guest_id, limit]
+    )
+    .then((result) => {
+      console.log(result);
+      // return Object.assign({}, result.rows);
+    })
+    .catch((err) => {
+      console.log(err.message);
+    });
 };
 exports.getAllReservations = getAllReservations;
 
@@ -97,7 +122,7 @@ exports.getAllReservations = getAllReservations;
  */
 const getAllProperties = (options, limit = 10) => {
   return pool
-    .query(`SELECT * FROM properties LIMIT $1`, [limit])
+    .query(`SELECT * FROM properties LIMIT $1;`, [limit])
     .then((result) => {
       return Object.assign({}, result.rows);
     })
