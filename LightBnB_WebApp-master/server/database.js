@@ -104,7 +104,13 @@ const getAllReservations = function (guest_id, limit = 10) {
     )
     .then((result) => {
       console.log(result);
-      // return Object.assign({}, result.rows);
+      const user = {};
+      let i = 0;
+      for (let obj of result.rows) {
+        user[i] = obj;
+        i++;
+      }
+      return user;
     })
     .catch((err) => {
       console.log(err.message);
